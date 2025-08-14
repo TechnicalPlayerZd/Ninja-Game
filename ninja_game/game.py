@@ -2,7 +2,6 @@ import os
 import sys
 import math
 import random
-
 import pygame
 
 from scripts.utils import load_image, load_images, Animation
@@ -11,6 +10,10 @@ from scripts.tilemap import Tilemap
 from scripts.clouds import Clouds
 from scripts.particle import Particle
 from scripts.spark import Spark
+
+# Project root (one level up from 'scripts')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MAPS_DIR = os.path.join(BASE_DIR, 'data', 'maps')
 
 class Game:
     def __init__(self):
@@ -21,7 +24,6 @@ class Game:
         self.display = pygame.Surface((320, 240))
 
         self.clock = pygame.time.Clock()
-        
         self.movement = [False, False]
         
         self.assets = {
@@ -46,9 +48,7 @@ class Game:
         }
         
         self.clouds = Clouds(self.assets['clouds'], count=16)
-        
         self.player = Player(self, (50, 50), (8, 15))
-        
         self.tilemap = Tilemap(self, tile_size=16)
         
         self.level = 0
@@ -57,11 +57,14 @@ class Game:
         self.screenshake = 0
         
     def load_level(self, map_id):
-        self.tilemap.load('data/maps/' + str(map_id) + '.json')
+        map_path = os.path.join(MAPS_DIR, f"{map_id}.json")
+        self.tilemap.load(map_path)
         
         self.leaf_spawners = []
         for tree in self.tilemap.extract([('large_decor', 2)], keep=True):
-            self.leaf_spawners.append(pygame.Rect(4 + tree['pos'][0], 4 + tree['pos'][1], 23, 13))
+            self.leaf_spawners.append(
+                pygame.Rect(4 + tree['pos'][0], 4 + tree['pos'][1], 23, 13)
+            )
             
         self.enemies = []
         for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
@@ -82,13 +85,12 @@ class Game:
     def run(self):
         while True:
             self.display.blit(self.assets['background'], (0, 0))
-            
             self.screenshake = max(0, self.screenshake - 1)
             
             if not len(self.enemies):
                 self.transition += 1
                 if self.transition > 30:
-                    self.level = min(self.level + 1, len(os.listdir('data/maps')) - 1)
+                    self.level = min(self.level + 1, len(os.listdir(MAPS_DIR)) - 1)
                     self.load_level(self.level)
             if self.transition < 0:
                 self.transition += 1
@@ -111,7 +113,6 @@ class Game:
             
             self.clouds.update()
             self.clouds.render(self.display, offset=render_scroll)
-            
             self.tilemap.render(self.display, offset=render_scroll)
             
             for enemy in self.enemies.copy():
@@ -182,11 +183,16 @@ class Game:
                         
             if self.transition:
                 transition_surf = pygame.Surface(self.display.get_size())
-                pygame.draw.circle(transition_surf, (255, 255, 255), (self.display.get_width() // 2, self.display.get_height() // 2), (30 - abs(self.transition)) * 8)
+                pygame.draw.circle(transition_surf, (255, 255, 255),
+                                   (self.display.get_width() // 2, self.display.get_height() // 2),
+                                   (30 - abs(self.transition)) * 8)
                 transition_surf.set_colorkey((255, 255, 255))
                 self.display.blit(transition_surf, (0, 0))
             
-            screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2, random.random() * self.screenshake - self.screenshake / 2)
+            screenshake_offset = (
+                random.random() * self.screenshake - self.screenshake / 2,
+                random.random() * self.screenshake - self.screenshake / 2
+            )
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
             pygame.display.update()
             self.clock.tick(60)
