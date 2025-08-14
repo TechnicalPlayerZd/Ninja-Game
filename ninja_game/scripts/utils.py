@@ -1,19 +1,25 @@
 import os
-
 import pygame
 
-BASE_IMG_PATH = 'data/images/'
+# Absolute path to 'data/images'
+BASE_IMG_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)),  # go from scripts/ → project root
+    'data', 'images'
+)
 
 def load_image(path):
-    img = pygame.image.load(BASE_IMG_PATH + path).convert()
+    full_path = os.path.join(BASE_IMG_PATH, path)
+    img = pygame.image.load(full_path).convert()
     img.set_colorkey((0, 0, 0))
     return img
 
 def load_images(path):
+    full_dir = os.path.join(BASE_IMG_PATH, path)
     images = []
-    for img_name in sorted(os.listdir(BASE_IMG_PATH + path)):
-        images.append(load_image(path + '/' + img_name))
+    for img_name in sorted(os.listdir(full_dir)):
+        images.append(load_image(os.path.join(path, img_name)))
     return images
+
 
 class Animation:
     def __init__(self, images, img_dur=5, loop=True):
